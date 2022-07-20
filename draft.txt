@@ -1,0 +1,379 @@
+import plotly.graph_objects as go
+import matplotlib.patches as mpatches
+import pandas as pd
+import csv
+import textwrap
+import ipywidgets as widgets
+import IPython.display
+from IPython.display import display, clear_output
+from ipywidgets import interact, interact_manual
+from matplotlib import pyplot as plt
+import numpy as np
+from pprint import pprint
+from collections import defaultdict
+import requests
+import io
+import jovian
+
+
+#company_name = 'TICF/CFGSTMTS'
+Month = 'M'
+Year = 'Y'
+
+#Number of allowed inputs beginning from most recent points (more inputs cause crowding on x-axis of graph)
+number_of_graph_inputs = 12
+
+#Graphs 3 graphs for the # of images, batches, and documents uploaded for a specified company and time period
+#time_period is either monthly or yearly
+def graphing_all(time_period,company_name,monthly_data,yearly_data):
+    usage_data = monthly_data
+    if time_period == 'Monthly':
+        usage_data = monthly_data
+    elif time_period == 'Yearly':
+        usage_data = yearly_data
+    
+    
+    
+    x_coord, y_coord = graph_yearly_data_documents(usage_data,company_name)
+    graphing_documents(company_name, x_coord,y_coord)
+    
+    x_coor, y_coor = graph_yearly_data_images(usage_data,company_name)
+    graphing_images(company_name,x_coor,y_coor)
+ 
+    x_cord, y_cord = graph_yearly_data_batches(usage_data,company_name)
+    graphing_batches(company_name,x_cord,y_cord)
+    
+#method to plot the documents graph
+def graphing_documents(company_name,x_coord, y_coord):
+    
+    fig, ax3 = plt.subplots(figsize=(15,7))
+    
+    ax3.plot(x_coord,y_coord,color = 'aqua', lw=5, label = 'third')
+    ax3.grid(visible=True, color='aqua', alpha=0.3, linestyle='-.', linewidth=2)
+    ax3.set_xlabel('Year',fontsize=14)
+    ax3.set_ylabel('[# of Documents]',fontsize=14)
+    ax3.set_title( company_name+' - Documents',fontsize=14)
+    plt.style.use('dark_background')
+    plt.tick_params(axis='both',direction='out',length=6,width=2,labelcolor='white',colors='aqua')
+    plt.plot(x_coord,y_coord)
+    plt.show()    
+    
+#method to plot the images graph
+def graphing_images(company_name,x_coord, y_coord):
+    
+    fig, ax2 = plt.subplots(figsize=(15,7))
+    
+    ax2.plot(x_coord,y_coord,color = 'aqua', lw=4, label = 'second')
+    ax2.grid(visible=True, color='aqua', alpha=0.3, linestyle='-.', linewidth=2)
+    ax2.set_xlabel('Year',fontsize=14)
+    ax2.set_ylabel('[# of Images]',fontsize=14)
+    ax2.set_title( company_name + ' - Images',fontsize=14)
+    plt.style.use('dark_background')
+    plt.tick_params(axis='both',direction='out',length=6,width=2,labelcolor='white',colors='aqua')
+    plt.plot(x_coord,y_coord)
+    plt.show()    
+    
+#method to plot the  batches graph
+def graphing_batches(company_name,x_coord, y_coord):
+    
+    fig, ax = plt.subplots(figsize=(15,7))
+    
+    ax.plot(x_coord,y_coord,color = 'aqua', lw=4, label = 'first')
+    ax.grid(visible=True, color='aqua', alpha=0.3, linestyle='-.', linewidth=2)
+    ax.set_xlabel('Year',fontsize=14)
+    ax.set_ylabel('[# of Batches]',fontsize=14)
+    ax.set_title(company_name + ' - Batches',fontsize=14)
+    plt.style.use('dark_background')
+    plt.tick_params(axis='both',direction='out',length=6,width=2,labelcolor='white',colors='aqua')
+    plt.plot(x_coord,y_coord)
+    plt.show()
+
+#Return the list of x and y coordinates that will be used to create the BATCHES uploaded graph
+def graph_yearly_data_batches(usage_data,company_name):
+    x_coordinates=[]
+    y_coordinates=[]
+    for company in usage_data:
+        if company == company_name:
+            for time in usage_data[company]:
+             
+                #print(usage_data[company].keys())
+                x_coordinates = list(usage_data[company].keys())
+            
+            for items in x_coordinates:
+                batch_number = int(usage_data[company][items][0])
+             
+               # print(batch_number)
+                y_coordinates.append(batch_number)
+            while len(x_coordinates) > number_of_graph_inputs: 
+                while len(y_coordinates) > number_of_graph_inputs:
+                    x_coordinates  = x_coordinates[1:]
+                    y_coordinates = y_coordinates[1:]
+            return x_coordinates,y_coordinates
+    
+#Return the list of x and y coordinates that will be used to create the IMAGES uploaded graph
+def graph_yearly_data_images(usage_data,company_name):
+    x=[]
+    y=[]
+    for company in usage_data:
+        if company == company_name:
+            for time in usage_data[company]:
+          
+             
+                x = list(usage_data[company].keys())
+                
+            for items in x:
+                batch_number = int(usage_data[company][items][1])
+               
+   
+                y.append(batch_number)
+            while len(x) > number_of_graph_inputs: 
+                while len(y) > number_of_graph_inputs:
+                    x  = x[1:]
+                    y = y[1:]
+            return x,y
+    
+    
+
+    
+#Return the list of x and y coordinates that will be used to create the Documents uploaded graph    
+def graph_yearly_data_documents(usage_data,company_name):
+    x=[]
+    y=[]
+    for company in usage_data:
+       
+        if company == company_name:
+           
+            for time in usage_data[company]:
+            
+                x = list(usage_data[company].keys())
+                
+                
+                        
+            for items in x:
+                batch_number = int(usage_data[company][items][2])
+            
+                #print(batch_number)
+                y.append(batch_number)
+            while len(x) > number_of_graph_inputs: 
+                while len(y) > number_of_graph_inputs:
+                    x  = x[1:]
+                    y = y[1:]
+            return x,y
+
+            
+#Call this method to print out the whole dictionary
+def dump_my_dictionary(usage_data):
+    for company in usage_data:
+        print(company)
+        for time in usage_data[company]:
+            print(usage_data[company])
+
+#This method will print out just the data under the specified company/product
+def extract_get_company_data(company_name,complete_dictionary):
+    pprint(complete_dictionary[company_name])
+    return complete_dictionary[company_name]
+    
+    
+#Method to seperate the name of the company/product from the rest of the string. 
+def get_company_product(first_element):
+    one = first_element.split()
+    company = one[4]
+    return company
+    
+    
+def build_dictionary_csv(time_period):   
+    upload_data={}
+    list_of_companies=[]
+    list_of_products=[]
+    #with open('out4.csv', mode ='r')as file:
+    csvFile = requests.get('https://raw.githubusercontent.com/Kumar-Vignesh/data/main/out4.csv').content
+    if 'apple' == 'apple':
+        
+
+      # reading the CSV file
+      csvFile = csv.reader(file)
+
+      # displaying the contents of the CSV file
+      for lines in csvFile:
+        first_element = lines[0]
+        if 'Monthly Report' in first_element:
+            company = get_company_product(first_element)
+            if company not in list_of_companies:
+                list_of_companies.append(company)
+        if 'Yearly Report' in first_element:
+            company = get_company_product(first_element)
+            if company not in list_of_companies:
+                list_of_companies.append(company)
+
+        if lines[0] == time_period:
+                year_month = lines[1]
+                batches = lines[2]
+                images = lines[3]
+                documents = lines[4]
+                #print(company, year_month, batches, images, documents)
+                if company not in upload_data:
+                    upload_data[company] = {}
+                if year_month not in upload_data[company]:
+                    upload_data[company][year_month] = [batches,images,documents]
+                    #pprint(upload_data)
+    return upload_data, list_of_companies
+
+def number_of_clients_products(list_of_companies):
+    product_list =[]
+    unique_company_list =[]
+    number_of_companies = len(list_of_companies)
+    #provides a list of all products(duplicates allowed)
+    for company in list_of_companies:
+        company_product = company.split("/")
+        product_name = company_product[1]
+        product_list.append(product_name)
+        print(product_name)
+    #provides a list of all unique companies
+    for company in list_of_companies:
+        company_product = company.split("/")
+        company_name = company_product[0]
+        if company_name not in unique_company_list:
+            unique_company_list.append(company_name)
+        else:
+            continue
+    number_of_company = len(unique_company_list)
+    number_of_products = len(product_list)
+    return number_of_company, number_of_products
+
+#The average number of documents / images / and batches will be 
+def display_statistics():
+    print("apple")
+    
+#The average number of documents / images / and batches will be found and it will provide a result respsectively for monthly
+#or yearly data sets
+def return_average_monthly(time_period,company_name, monthly_data,yearly_data):
+    usage_data = monthly_data
+    if time_period == 'Monthly':
+        usage_data = monthly_data
+    elif time_period == 'Yearly':
+        usage_data = yearly_data
+    x_image_points,y_image_points = graph_yearly_data_images(usage_data,company_name)
+    x_batches_points,y_batches_points = graph_yearly_data_batches(usage_data,company_name)
+    x_documents_points,y_documents_points = graph_yearly_data_documents(usage_data,company_name)
+    
+    #Calculating the mean of each graph
+    images_mean = sum(y_image_points) / len(y_image_points)
+    batches_mean = sum(y_batches_points) / len(y_batches_points)
+    documents_mean = sum(y_documents_points) / len(y_documents_points)
+    
+    #Getting the specified time period to label the mean display
+    first_time_period = x_image_points[0]
+    x_image_points.reverse()
+    last_time_period = x_image_points[0]
+    text_to_print1 = "Mean Number of -> Documents: "
+    text_to_print2 = " Images: "
+    text_to_print3 = " Batches: "
+    text_to_print4 = " For The Time Period Of: "
+    text_to_print5 = "to"
+    print(text_to_print1, documents_mean,text_to_print2, images_mean, text_to_print3,batches_mean,text_to_print4,
+         first_time_period,text_to_print5, last_time_period)
+    return documents_mean,images_mean,batches_mean
+   
+    
+#Will provide statistics on a companies data such as
+def statistics_builder(company_name,usage_data):
+    
+    print('apple')
+
+#Function to create a user-friendly dropdown list that allows clients to choose a Company/Time-Period and see the
+#corresponding graph
+def dropdown_widget(list_of_companies,monthly_data,yearly_data):
+    
+    companies = sorted(list_of_companies)
+    month = monthly_data
+    year = yearly_data
+    
+    output = widgets.Output()
+    
+    dropdown_company = widgets.Dropdown(options = (companies), value=None, description = 'Company')
+    dropdown_time = widgets.Dropdown(options = ('Monthly','Yearly'), value='Monthly', description = 'Time-Period')
+    #dropdown_range_of_time = widgets.Dropdown(options = x_data_points)
+    
+    
+    
+    
+    for company in companies:
+        
+        def output_by_company(company,time):
+        
+            try:
+                #print("trying in method 1")
+                graphing_all(monthly_data,company_choice)
+            except KeyError:
+                if dropdown_company.value != True:
+                    if dropdown_time.value != True:
+                        IPython.display.clear_output(wait=True)
+                        display(input_widgets)
+            
+            
+    def dropdown_company_handler(change):
+        #print("trying in method 2")
+        display(input_widgets)
+        company_choice = change.new
+        #print(company_choice)
+        graphing_all(dropdown_time.value,company_choice,monthly_data,yearly_data)
+        document_mean,image_mean,batches_mean = return_average_monthly(dropdown_time.value,company_choice,monthly_data,yearly_data)
+        
+        #begin_index, final_index = find_index(company_choice,dropdown_time.value)
+        #graphing(df,final_index,begin_index)
+        IPython.display.clear_output(wait=True)
+        
+    def dropdown_time_handler(change):
+        #print("trying in method 3")
+        display(input_widgets)
+        time_choice = change.new
+        #print(time_choice)
+        graphing_all(time_choice,dropdown_company.value,monthly_data,yearly_data)
+        document_mean,image_mean,batches_mean = return_average_monthly(time_choice,dropdown_company.value,monthly_data,yearly_data)
+        
+        IPython.display.clear_output(wait=True)
+        
+    dropdown_company.observe(dropdown_company_handler, names = 'value')
+    dropdown_time.observe(dropdown_time_handler, names = 'value')
+    
+    
+    input_widgets = widgets.HBox([dropdown_company, dropdown_time])
+    display(input_widgets)
+    IPython.display.clear_output(wait=True)
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+monthly_data, list_of_companies = build_dictionary_csv(Month)
+yearly_data,list_of_companies = build_dictionary_csv(Year)
+
+companies,products = number_of_clients_products(list_of_companies)
+print(companies,products)
+
+
+dropdown_widget(list_of_companies,monthly_data,yearly_data)
+#pprint(monthly_data)
+#print('yearly below')
+#pprint(yearly_data)
+
+#pprint(monthly_data)
+
+#pprint(yearly_data)
+#monthly_for_one = extract_get_company_data('LINCOLN/AFPCOLOR', monthly_data)
+#yearly_for_one = extract_get_company_data('QUESTDIAG/QUESTPATH', yearly_data)
+
+
+
+#x_coordinates, y_coordinates = graph_yearly_data_documents(yearly_data,)
+
+#graphing_all('Yearly',company_name,monthly_data,yearly_data)
